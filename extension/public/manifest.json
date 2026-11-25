@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Flagsmith X-Ray",
+  "version": "1.0.0",
+  "description": "Inspect live Flagsmith flags, detect Default vs Segment/Identity overrides, and apply zero-side-effect local overrides.",
+  "permissions": ["storage", "activeTab", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Flagsmith X-Ray"
+  },
+  "devtools_page": "devtools.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["interceptor.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "world": "ISOLATED",
+      "run_at": "document_start"
+    }
+  ]
+}

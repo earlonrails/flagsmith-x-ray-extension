@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: flagsmith
+    volumes:
+      - flagsmith_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flagsmith"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flagsmith:
+    image: flagsmith/flagsmith:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/flagsmith
+      USE_POSTGRES_FOR_ANALYTICS: "false"
+      ALLOW_REGISTRATION_WITHOUT_INVITE: "true"
+      ENABLE_ADMIN_ACCESS_USER_PASS: "true"
+      DJANGO_ALLOWED_HOSTS: "*"
+      CORS_ORIGIN_ALLOW_ALL: "True"
+      CORS_ALLOW_ALL_ORIGINS: "True"
+      ENV: local
+
+volumes:
+  flagsmith_pgdata:

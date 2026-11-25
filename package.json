@@ -1,0 +1,15 @@
+{
+  "name": "flagsmith-xray",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Flagsmith X-Ray: Chrome DevTools & Popup inspector + local override engine for Flagsmith",
+  "scripts": {
+    "setup": "npm --prefix demo-app install && npm --prefix extension install",
+    "seed": "node scripts/seed.mjs",
+    "dev:demo": "npm --prefix demo-app run dev",
+    "build:demo": "npm --prefix demo-app run build",
+    "build:extension": "npm --prefix extension run build",
+    "build": "npm run build:demo && npm run build:extension",
+    "typecheck": "npm --prefix demo-app run typecheck && npm --prefix extension run typecheck"
+  }
+}
