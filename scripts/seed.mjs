@@ -325,16 +325,19 @@ async function ensureBetaSegment(token, projectId) {
 }
 
 async function ensureSegmentOverrides(token, env, segment, featureByName) {
-  const existingSegments = unwrapList(
-    await apiRequest(`/features/feature-segments/?environment=${env.id}`, { token })
-  );
-
   for (const override of SEGMENT_OVERRIDES) {
     const feature = featureByName.get(override.featureName);
     if (!feature) continue;
 
+    const existingSegments = unwrapList(
+      await apiRequest(
+        `/features/feature-segments/?environment=${env.id}&feature=${feature.id}`,
+        { token }
+      )
+    );
+
     let featureSegment = existingSegments.find(
-      (fs) => fs.feature === feature.id && fs.segment === segment.id
+      (fs) => (fs.feature === undefined || fs.feature === feature.id) && fs.segment === segment.id
     );
 
     if (!featureSegment) {
@@ -352,32 +355,35 @@ async function ensureSegmentOverrides(token, env, segment, featureByName) {
 
     // Find or create the featurestate tied to this feature_segment
     const envStates = unwrapList(
-      await apiRequest(`/environments/${env.api_key}/featurestates/?feature=${feature.id}`, { token })
+      await apiRequest(`/features/featurestates/?environment=${env.id}&feature=${feature.id}`, { token })
     );
     const segState = envStates.find((s) => s.feature_segment === featureSegment.id);
 
+    const stateBody = {
+      feature: feature.id,
+      environment: env.id,
+      feature_segment: featureSegment.id,
+      enabled: override.enabled,
+    };
+    if (override.feature_state_value !== null && override.feature_state_value !== undefined) {
+      stateBody.feature_state_value = {
+        type: 'unicode',
+        string_value: String(override.feature_state_value),
+      };
+    }
+
     if (segState) {
-      await apiRequest(`/environments/${env.api_key}/featurestates/${segState.id}/`, {
+      await apiRequest(`/features/featurestates/${segState.id}/`, {
         method: 'PUT',
         token,
-        body: {
-          ...segState,
-          enabled: override.enabled,
-          feature_state_value: override.feature_state_value,
-        },
+        body: stateBody,
       });
       console.log(`Updated segment override for ${override.featureName}`);
     } else {
       await apiRequest('/features/featurestates/', {
         method: 'POST',
         token,
-        body: {
-          feature: feature.id,
-          environment: env.id,
-          feature_segment: featureSegment.id,
-          enabled: override.enabled,
-          feature_state_value: override.feature_state_value,
-        },
+        body: stateBody,
       });
       console.log(`Created segment override for ${override.featureName}`);
     }
